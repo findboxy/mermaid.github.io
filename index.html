@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Side Scroller</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #1e3c72, #2a5298); /* Blue gradient background */
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #background-hills, #foreground-hills {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%; /* Double width for seamless scrolling */
+            height: 100%;
+            background-repeat: repeat-x;
+        }
+        #background-hills {
+            background: linear-gradient(to top, #004d00, #003300); /* Darker green for distant hills */
+            animation: moveBackground 40s linear infinite; /* Slow movement */
+            z-index: 1; /* Behind foreground */
+        }
+        #foreground-hills {
+            background: linear-gradient(to top, #006400, #004d00); /* Dark green for foreground hills */
+            animation: moveForeground 20s linear infinite; /* Faster movement */
+            z-index: 2; /* In front of background */
+        }
+        @keyframes moveBackground {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%); /* Move left */
+            }
+        }
+        @keyframes moveForeground {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%); /* Move left */
+            }
+        }
+        #mermaid {
+            position: absolute;
+            width: 80px; /* Adjusted to fit the GIF */
+            height: 80px; /* Adjusted to fit the GIF */
+            background: url('https://raw.githubusercontent.com/findboxy/mermaid.github.io/refs/heads/main/mermaid.gif') no-repeat center center;
+            background-size: cover;
+            bottom: 50%;
+            left: 100px;
+            z-index: 3; /* Above foreground */
+            transition: filter 0.2s; /* Smooth transition for brightness effect */
+        }
+        .obstacle, .treasure, .powerup, .seaweed {
+            position: absolute;
+            z-index: 3; /* Above foreground */
+        }
+        .obstacle {
+            width: 50px; /* Larger obstacles */
+            height: 50px;
+            background: url('https://raw.githubusercontent.com/findboxy/mermaid.github.io/refs/heads/main/octopus2.gif') no-repeat center center;
+            background-size: cover;
+            border-radius: 10px; /* Slightly rounded corners */
+        }
+        .treasure {
+            width: 30px;
+            height: 30px;
+            background-color: #ffd700; /* Gold color for treasures */
+            border-radius: 50%; /* Make it a circle */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+        }
+        .powerup {
+            width: 30px;
+            height: 30px;
+            background-color: #00ff00; /* Green color for powerups */
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); /* Star shape */
+        }
+        .seaweed {
+            width: 20px; /* Narrow width for seaweed */
+            background: linear-gradient(to right, #006400, #228b22); /* Gradient for wavy effect */
+            animation: wave 2s infinite ease-in-out; /* Wavy animation */
+        }
+        @keyframes wave {
+            0%, 100% {
+                transform: skewY(0deg);
+            }
+            50% {
+                transform: skewY(10deg); /* Wavy effect */
+            }
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 4; /* Above everything */
+        }
+        #invincibility-timer {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff00; /* Green color for invincibility timer */
+            display: none; /* Hidden by default */
+            z-index: 4; /* Above everything */
+        }
+        #level {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 4; /* Above everything */
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="background-hills"></div>
+        <div id="foreground-hills"></div>
+        <div id="score">$ : 0</div>
+        <div id="invincibility-timer">Invincibility: 5</div>
+        <div id="level">Level: 1</div>
+        <div id="mermaid"></div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const mermaid = document.getElementById('mermaid');
+        const scoreElement = document.getElementById('score');
+        const invincibilityTimerElement = document.getElementById('invincibility-timer');
+        const levelElement = document.getElementById('level');
+
+        let mermaidX = 100;
+        let mermaidY = window.innerHeight / 2;
+        let mermaidSpeed = 20; // Initial mermaid speed
+
+        const obstacles = [];
+        const treasures = [];
+        const powerups = [];
+        const seaweeds = [];
+
+        let gapHeight = 200; // Initial gap size
+        let gapReductionInterval = 60000; // Reduce gap size every 60 seconds
+        let lastGapReductionTime = Date.now();
+
+        let score = 0; // Track the number of treasures collected
+        let isInvincible = false; // Track invincibility state
+        let invincibilityEndTime = 0; // Track when invincibility ends
+
+        let level = 1; // Current level
+        let levelStartTime = Date.now(); // Track when the current level started
+        let objectSpeed = 5; // Initial speed of objects
+        let obstacleSpawnInterval = 2000; // Initial obstacle spawn interval
+        let treasureSpawnInterval = 3000; // Initial treasure spawn interval
+        let powerupSpawnInterval = 5000; // Initial powerup spawn interval
+        let seaweedSpawnInterval = 4000; // Initial seaweed spawn interval
+
+        // Function to increase difficulty every 30 seconds
+        function increaseDifficulty() {
+            level++;
+            levelElement.textContent = `Level: ${level}`;
+
+            // Increase object speed
+            objectSpeed += 1;
+
+            // Adjust spawn intervals
+            obstacleSpawnInterval = Math.max(obstacleSpawnInterval - 200, 1000); // Faster obstacle spawns
+            treasureSpawnInterval = Math.max(treasureSpawnInterval - 100, 2000); // Slightly faster treasure spawns
+            powerupSpawnInterval = Math.max(powerupSpawnInterval + 500, 5000); // Slower powerup spawns
+            seaweedSpawnInterval = Math.max(seaweedSpawnInterval - 100, 2000); // Faster seaweed spawns
+
+            // Clear existing intervals and set new ones
+            clearInterval(obstacleInterval);
+            clearInterval(treasureInterval);
+            clearInterval(powerupInterval);
+            clearInterval(seaweedInterval);
+
+            obstacleInterval = setInterval(() => createObject('obstacle'), obstacleSpawnInterval);
+            treasureInterval = setInterval(() => createObject('treasure'), treasureSpawnInterval);
+            powerupInterval = setInterval(() => createObject('powerup'), powerupSpawnInterval);
+            seaweedInterval = setInterval(() => createObject('seaweed'), seaweedSpawnInterval);
+        }
+
+        // Function to create a new obstacle, treasure, powerup, or seaweed
+        function createObject(type) {
+            if (type === 'seaweed') {
+                // Create a seaweed wall with a gap
+                const gapPosition = Math.random() * (window.innerHeight - gapHeight); // Random gap position
+
+                // Create the top part of the seaweed wall
+                const seaweedTop = document.createElement('div');
+                seaweedTop.classList.add('seaweed');
+                seaweedTop.style.left = `${window.innerWidth}px`;
+                seaweedTop.style.top = `0`;
+                seaweedTop.style.height = `${gapPosition}px`;
+                gameContainer.appendChild(seaweedTop);
+                seaweeds.push(seaweedTop);
+
+                // Create the bottom part of the seaweed wall
+                const seaweedBottom = document.createElement('div');
+                seaweedBottom.classList.add('seaweed');
+                seaweedBottom.style.left = `${window.innerWidth}px`;
+                seaweedBottom.style.top = `${gapPosition + gapHeight}px`;
+                seaweedBottom.style.height = `${window.innerHeight - (gapPosition + gapHeight)}px`;
+                gameContainer.appendChild(seaweedBottom);
+                seaweeds.push(seaweedBottom);
+            } else {
+                const obj = document.createElement('div');
+                obj.classList.add(type);
+                obj.style.left = `${window.innerWidth}px`;
+                obj.style.top = `${Math.random() * (window.innerHeight - 50)}px`;
+                if (type === 'treasure') {
+                    obj.textContent = '$'; // Add "$" to treasures
+                }
+                gameContainer.appendChild(obj);
+
+                if (type === 'obstacle') {
+                    obstacles.push(obj);
+                } else if (type === 'treasure') {
+                    treasures.push(obj);
+                } else if (type === 'powerup') {
+                    powerups.push(obj);
+                }
+            }
+        }
+
+        // Function to move objects
+        function moveObjects() {
+            obstacles.forEach(obstacle => {
+                obstacle.style.left = `${parseInt(obstacle.style.left) - objectSpeed}px`;
+                if (parseInt(obstacle.style.left) < -50) {
+                    obstacle.remove();
+                    obstacles.shift();
+                }
+            });
+
+            treasures.forEach(treasure => {
+                treasure.style.left = `${parseInt(treasure.style.left) - objectSpeed}px`;
+                if (parseInt(treasure.style.left) < -30) {
+                    treasure.remove();
+                    treasures.shift();
+                }
+            });
+
+            powerups.forEach(powerup => {
+                powerup.style.left = `${parseInt(powerup.style.left) - objectSpeed}px`;
+                if (parseInt(powerup.style.left) < -30) {
+                    powerup.remove();
+                    powerups.shift();
+                }
+            });
+
+            seaweeds.forEach(seaweed => {
+                seaweed.style.left = `${parseInt(seaweed.style.left) - objectSpeed}px`;
+                if (parseInt(seaweed.style.left) < -20) {
+                    seaweed.remove();
+                    seaweeds.shift();
+                }
+            });
+        }
+
+        // Function to check for collisions
+        function checkCollisions() {
+            const mermaidRect = mermaid.getBoundingClientRect();
+
+            // Check collisions with obstacles (octopuses)
+            obstacles.forEach((obstacle, index) => {
+                const obstacleRect = obstacle.getBoundingClientRect();
+                if (mermaidRect.left < obstacleRect.right &&
+                    mermaidRect.right > obstacleRect.left &&
+                    mermaidRect.top < obstacleRect.bottom &&
+                    mermaidRect.bottom > obstacleRect.top) {
+                    if (isInvincible) {
+                        // If invincible, count the octopus as a treasure
+                        obstacle.remove();
+                        obstacles.splice(index, 1);
+                        score++; // Increase score
+                        scoreElement.textContent = `$ : ${score}`; // Update score display
+                    } else {
+                        // If not invincible, game over
+                        alert('Game Over!');
+                        window.location.reload();
+                    }
+                }
+            });
+
+            // Check collisions with treasures
+            treasures.forEach((treasure, index) => {
+                const treasureRect = treasure.getBoundingClientRect();
+                if (mermaidRect.left < treasureRect.right &&
+                    mermaidRect.right > treasureRect.left &&
+                    mermaidRect.top < treasureRect.bottom &&
+                    mermaidRect.bottom > treasureRect.top) {
+                    treasure.remove();
+                    treasures.splice(index, 1);
+                    score++; // Increase score
+                    scoreElement.textContent = `$ : ${score}`; // Update score display
+                }
+            });
+
+            // Check collisions with powerups
+            powerups.forEach((powerup, index) => {
+                const powerupRect = powerup.getBoundingClientRect();
+                if (mermaidRect.left < powerupRect.right &&
+                    mermaidRect.right > powerupRect.left &&
+                    mermaidRect.top < powerupRect.bottom &&
+                    mermaidRect.bottom > powerupRect.top) {
+                    powerup.remove();
+                    powerups.splice(index, 1);
+                    activateInvincibility(); // Activate invincibility
+                }
+            });
+
+            // Check collisions with seaweed (always an obstacle)
+            seaweeds.forEach(seaweed => {
+                const seaweedRect = seaweed.getBoundingClientRect();
+                if (mermaidRect.left < seaweedRect.right &&
+                    mermaidRect.right > seaweedRect.left &&
+                    mermaidRect.top < seaweedRect.bottom &&
+                    mermaidRect.bottom > seaweedRect.top) {
+                    alert('Game Over!');
+                    window.location.reload();
+                }
+            });
+        }
+
+        // Function to activate invincibility
+        function activateInvincibility() {
+            isInvincible = true;
+            invincibilityEndTime = Date.now() + 5000; // 5 seconds of invincibility
+            invincibilityTimerElement.style.display = 'block'; // Show timer
+
+            // Flash effect for invincibility
+            const flashInterval = setInterval(() => {
+                mermaid.style.filter = mermaid.style.filter === 'brightness(1.5)' ? 'brightness(1)' : 'brightness(1.5)';
+            }, 200); // Flash every 200ms
+
+            // Update invincibility timer every second
+            const timerInterval = setInterval(() => {
+                const timeLeft = Math.ceil((invincibilityEndTime - Date.now()) / 1000);
+                if (timeLeft >= 0) {
+                    invincibilityTimerElement.textContent = `Invincibility: ${timeLeft}`;
+                } else {
+                    clearInterval(timerInterval);
+                    clearInterval(flashInterval);
+                    isInvincible = false;
+                    mermaid.style.filter = 'brightness(1)'; // Restore normal brightness
+                    invincibilityTimerElement.style.display = 'none'; // Hide timer
+                }
+            }, 1000);
+        }
+
+        // Game loop
+        function gameLoop() {
+            moveObjects();
+            checkCollisions();
+
+            // Increase difficulty every 30 seconds
+            if (Date.now() - levelStartTime > 30000) {
+                increaseDifficulty();
+                levelStartTime = Date.now();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listener for arrow keys
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp':
+                    mermaidY = Math.max(mermaidY - mermaidSpeed, 0); // Move up
+                    break;
+                case 'ArrowDown':
+                    mermaidY = Math.min(mermaidY + mermaidSpeed, window.innerHeight - 50); // Move down
+                    break;
+                case 'ArrowLeft':
+                    mermaidX = Math.max(mermaidX - mermaidSpeed, 0);
+                    break;
+                case 'ArrowRight':
+                    mermaidX = Math.min(mermaidX + mermaidSpeed, window.innerWidth - 50);
+                    break;
+            }
+            mermaid.style.left = `${mermaidX}px`;
+            mermaid.style.bottom = `${mermaidY}px`;
+        });
+
+        // Mouse control for the mermaid
+        document.addEventListener('mousemove', (e) => {
+            mermaidX = e.clientX - mermaid.offsetWidth / 2;
+            mermaidY = window.innerHeight - e.clientY - mermaid.offsetHeight / 2; // Invert Y-axis for mouse control
+            mermaid.style.left = `${mermaidX}px`;
+            mermaid.style.bottom = `${mermaidY}px`;
+        });
+
+        // Generate objects at random intervals
+        let obstacleInterval = setInterval(() => createObject('obstacle'), obstacleSpawnInterval);
+        let treasureInterval = setInterval(() => createObject('treasure'), treasureSpawnInterval);
+        let powerupInterval = setInterval(() => createObject('powerup'), powerupSpawnInterval);
+        let seaweedInterval = setInterval(() => createObject('seaweed'), seaweedSpawnInterval);
+
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
