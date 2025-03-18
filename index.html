@@ -8,7 +8,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: linear-gradient(to bottom, #1e3c72, #2a5298); /* Blue gradient background */
+            background: linear-gradient(to bottom, #2a5298,#1e3c72); /* Blue gradient background */
             font-family: Arial, sans-serif;
             color: white;
         }
@@ -23,16 +23,18 @@
             bottom: 0;
             left: 0;
             width: 200%; /* Double width for seamless scrolling */
-            height: 100%;
+            
             background-repeat: repeat-x;
         }
         #background-hills {
-            background: linear-gradient(to top, #004d00, #003300); /* Darker green for distant hills */
+            background: linear-gradient(to top, #003300, #004d00); /* Darker green for distant hills */
+            height: 50%;
             animation: moveBackground 40s linear infinite; /* Slow movement */
             z-index: 1; /* Behind foreground */
         }
         #foreground-hills {
-            background: linear-gradient(to top, #006400, #004d00); /* Dark green for foreground hills */
+            background: linear-gradient(to top,#004d00, #006400); /* Dark green for foreground hills */
+            height: 30%;
             animation: moveForeground 20s linear infinite; /* Faster movement */
             z-index: 2; /* In front of background */
         }
@@ -54,8 +56,8 @@
         }
         #mermaid {
             position: absolute;
-            width: 80px; /* Adjusted to fit the GIF */
-            height: 80px; /* Adjusted to fit the GIF */
+            width: 150px; /* Adjusted to fit the GIF */
+            height: 50px; /* Adjusted to fit the GIF */
             background: url('https://raw.githubusercontent.com/findboxy/mermaid.github.io/refs/heads/main/mermaid.gif') no-repeat center center;
             background-size: cover;
             bottom: 50%;
