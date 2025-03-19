@@ -420,7 +420,7 @@ let isDragging = false;
 let startX, startY, offsetX = 0, offsetY = 0;
 
 // Touch start event
-mermaid.addEventListener('touchstart', (e) => {
+document.addEventListener('touchstart', (e) => {
   e.preventDefault();
   isDragging = true;
 
@@ -431,7 +431,7 @@ mermaid.addEventListener('touchstart', (e) => {
 
 
 // Touch move event
-mermaid.addEventListener('touchmove', (e) => {
+document.addEventListener('touchmove', (e) => {
   if (!isDragging) return;
   e.preventDefault();
 
@@ -446,7 +446,7 @@ mermaid.addEventListener('touchmove', (e) => {
 });
 
 // Touch end event
-mermaid.addEventListener('touchend', () => {
+document.addEventListener('touchend', () => {
   isDragging = false;
 });
 
