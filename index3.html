@@ -6,8 +6,7 @@
     <title>Mermaid Side Scroller</title>
     <style>
         body {
-            height:100%;
-			margin: 0;
+            margin: 0;
             overflow: hidden;
             background: linear-gradient(to bottom, #1e3c72, #2a5298); /* Blue gradient background */
             font-family: Arial, sans-serif;
@@ -33,10 +32,14 @@
 			height: 30%;
             z-index: 1; /* Behind foreground */
         }
-        #foreground-hills {
+		 #canvas {
             background: linear-gradient(to top, #006400, #004d00); /* Dark green for foreground hills */
-            animation: moveForeground 20s linear infinite; /* Faster movement */
-			height: 18%;
+            animation: moveForeground 10s linear infinite; /* Faster movement */
+			position: absolute;
+            bottom: 0;
+            left: 0;
+			height: 40%;
+			width: 200%;
             z-index: 2; /* In front of background */
         }
         @keyframes moveBackground {
@@ -66,14 +69,6 @@
             z-index: 3; /* Above foreground */
             transition: filter 0.2s; /* Smooth transition for brightness effect */
         }
-		#mermaidController {
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			overflow: hidden;
-			z-index: 5; /*above everything*/
-		}
-		
         .obstacle, .treasure, .powerup, .seaweed {
             position: absolute;
             z-index: 3; /* Above foreground */
@@ -142,31 +137,6 @@
             font-weight: bold;
             z-index: 4; /* Above everything */
         }
-        #start-screen, #game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-            z-index: 5; /* Above everything */
-        }
-        #game-over-screen {
-            display: none; /* Hidden by default */
-        }
-        #start-screen h1, #game-over-screen h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-        #start-screen button, #game-over-screen button {
-            font-size: 24px;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -177,30 +147,15 @@
         <div id="invincibility-timer">Invincibility: 5</div>
         <div id="level">Level: 1</div>
         <div id="mermaid"></div>
-		<div id="mermaidController"></div>
-        <div id="start-screen">
-            <h1>Mermaid Game</h1>
-            <button id="start-button">Start</button>
-        </div>
-        <div id="game-over-screen">
-            <h1>Game Over</h1>
-            <p id="final-score">Score: 0</p>
-            <button id="play-again-button">Play Again</button>
-        </div>
+		<canvas id="canvas"></canvas>
     </div>
 
     <script>
         const gameContainer = document.getElementById('game-container');
         const mermaid = document.getElementById('mermaid');
-		const mermaidController = document.getElementById('mermaidController');
         const scoreElement = document.getElementById('score');
         const invincibilityTimerElement = document.getElementById('invincibility-timer');
         const levelElement = document.getElementById('level');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const finalScoreElement = document.getElementById('final-score');
-        const startButton = document.getElementById('start-button');
-        const playAgainButton = document.getElementById('play-again-button');
 
         let mermaidX = 100;
         let mermaidY = window.innerHeight / 2;
@@ -226,61 +181,50 @@
         let treasureSpawnInterval = 3000; // Initial treasure spawn interval
         let powerupSpawnInterval = 5000; // Initial powerup spawn interval
         let seaweedSpawnInterval = 4000; // Initial seaweed spawn interval
-
-        let gameLoopRunning = false; // Track if the game loop is running
-
-        
-		//general console logs
-		console.log('game running');
-		console.log(mermaid);
-		console.log(mermaidController);
 		
-		// Function to start the game
-        function startGame() {
-            startScreen.style.display = 'none'; // Hide start screen
-            gameOverScreen.style.display = 'none'; // Hide game over screen
-            resetGame(); // Reset game state
-            gameLoopRunning = true;
-            gameLoop(); // Start the game loop
-        }
+		
+		//Hilly Landscape
+		
+		 	// javascript graphics boilerplate
+ 			var canvas = document.getElementById("canvas")
+ 			var context = canvas.getContext("2d");
+ 
+ 			// parameters - change to your liking
+ 			var STEP_MAX = 2.5;
+ 			var STEP_CHANGE = 1.0;
+ 			var HEIGHT_MAX = canvas.height;
 
-        // Function to reset the game state
-        function resetGame() {
-            // Clear all objects
-            obstacles.forEach(obstacle => obstacle.remove());
-            treasures.forEach(treasure => treasure.remove());
-            powerups.forEach(powerup => powerup.remove());
-            seaweeds.forEach(seaweed => seaweed.remove());
+ 			// starting conditions
+ 			var height = Math.random() * HEIGHT_MAX;
+ 			var slope = (Math.random() * STEP_MAX) * 2 - STEP_MAX;
 
-            // Reset variables
-            obstacles.length = 0;
-            treasures.length = 0;
-            powerups.length = 0;
-            seaweeds.length = 0;
+ 			// creating the landscape
+ 			for (var x = 0; x < canvas.width; x++) {
+      			// change height and slope
+      			height += slope;
+      			slope += (Math.random() * STEP_CHANGE) * 2 - STEP_CHANGE;
 
-            mermaidX = 100;
-            mermaidY = window.innerHeight / 2;
-            score = 0;
-            level = 1;
-            objectSpeed = 5;
-            obstacleSpawnInterval = 2000;
-            treasureSpawnInterval = 3000;
-            powerupSpawnInterval = 5000;
-            seaweedSpawnInterval = 4000;
+      			// clip height and slope to maximum
+      			if (slope > STEP_MAX) { slope = STEP_MAX };
+      			if (slope < -STEP_MAX) { slope = -STEP_MAX };
+ 
+      			if (height > HEIGHT_MAX) { 
+          		height = HEIGHT_MAX;
+          		slope *= -1;
+      			}
+      			if (height < 0) { 
+          		height = 0;
+          		slope *= -1;
+      			}
+      
+      		// draw column
+      		context.beginPath();
+      		context.moveTo(x, HEIGHT_MAX);
+      		context.lineTo(x, height);
+      		context.stroke();
 
-            // Update UI
-            scoreElement.textContent = '$ : 0';
-            levelElement.textContent = 'Level: 1';
-            invincibilityTimerElement.style.display = 'none';
-            mermaid.style.filter = 'brightness(1)';
-        }
-
-        // Function to end the game
-        function endGame() {
-            gameLoopRunning = false; // Stop the game loop
-            finalScoreElement.textContent = `Score: ${score}`; // Show final score
-            gameOverScreen.style.display = 'flex'; // Show game over screen
-        }
+ 			}
+		
 
         // Function to increase difficulty every 30 seconds
         function increaseDifficulty() {
@@ -404,8 +348,9 @@
                         score++; // Increase score
                         scoreElement.textContent = `$ : ${score}`; // Update score display
                     } else {
-                        // If not invincible, end the game
-                        endGame();
+                        // If not invincible, game over
+                        alert('Game Over!');
+                        window.location.reload();
                     }
                 }
             });
@@ -444,7 +389,8 @@
                     mermaidRect.right > seaweedRect.left &&
                     mermaidRect.top < seaweedRect.bottom &&
                     mermaidRect.bottom > seaweedRect.top) {
-                    endGame();
+                    alert('Game Over!');
+                    window.location.reload();
                 }
             });
         }
@@ -477,8 +423,6 @@
 
         // Game loop
         function gameLoop() {
-            if (!gameLoopRunning) return; // Stop the game loop if the game is over
-
             moveObjects();
             checkCollisions();
 
@@ -493,14 +437,12 @@
 
         // Event listener for arrow keys
         document.addEventListener('keydown', (e) => {
-            if (!gameLoopRunning) return; // Ignore input if the game is not running
-
             switch (e.key) {
                 case 'ArrowUp':
-                    mermaidY = Math.max(mermaidY + mermaidSpeed, 0); // Move up
+                    mermaidY = Math.max(mermaidY - mermaidSpeed, 0); // Move up
                     break;
                 case 'ArrowDown':
-                    mermaidY = Math.min(mermaidY - mermaidSpeed, window.innerHeight - 50); // Move down
+                    mermaidY = Math.min(mermaidY + mermaidSpeed, window.innerHeight - 50); // Move down
                     break;
                 case 'ArrowLeft':
                     mermaidX = Math.max(mermaidX - mermaidSpeed, 0);
@@ -515,96 +457,20 @@
 
         // Mouse control for the mermaid
         document.addEventListener('mousemove', (e) => {
-            if (!gameLoopRunning) return; // Ignore input if the game is not running
-
             mermaidX = e.clientX - mermaid.offsetWidth / 2;
             mermaidY = window.innerHeight - e.clientY - mermaid.offsetHeight / 2; // Invert Y-axis for mouse control
             mermaid.style.left = `${mermaidX}px`;
             mermaid.style.bottom = `${mermaidY}px`;
         });
 
-		
-
-let isDragging = false;
-let startX, startY, offsetX = 0, offsetY = 0;
-
-// Touch start event
-mermaidController.addEventListener('touchstart', (e) => {
-	console.log('Touch started');
-  e.preventDefault(); // Prevent default touch behavior (e.g., scrolling)
-  isDragging = true;
-
-  // Get the initial touch position
-  const touch = e.touches[0];
-  const rect = mermaid.getBoundingClientRect(); // Get current position of the mermaid
-  startX = touch.clientX - rect.left; // Calculate offset within the element
-  startY = touch.clientY - rect.top;
-
-  // Add active class for styling (optional)
-  mermaid.classList.add('active');
-});
-
-// Touch move event
-mermaidController.addEventListener('touchmove', (e) => {
-	console.log('Touch moved');
-  if (!isDragging) return;
-  e.preventDefault();
-
-  const touch = e.touches[0];
-
-  // Calculate new position
-  offsetX = touch.clientX - startX;
-  offsetY = touch.clientY - startY;
-
-  // Update mermaid position
-  mermaid.style.left = `${offsetX}px`;
-  mermaid.style.top = `${offsetY}px`;
-});
-
-// Touch end event
-mermaidController.addEventListener('touchend', () => {
-	console.log('Touch ended');
-  isDragging = false;
-
-  // Remove active class (optional)
-  mermaid.classList.remove('active');
-});
-
-// Touch cancel event (optional)
-mermaidController.addEventListener('touchcancel', () => {
-  isDragging = false;
-  mermaid.classList.remove('active');
-});
-		
-		
-        // Start button event listener
-        startButton.addEventListener('click', startGame);
-
-        // Play again button event listener
-        playAgainButton.addEventListener('click', startGame);
-
         // Generate objects at random intervals
-        let obstacleInterval, treasureInterval, powerupInterval, seaweedInterval;
+        let obstacleInterval = setInterval(() => createObject('obstacle'), obstacleSpawnInterval);
+        let treasureInterval = setInterval(() => createObject('treasure'), treasureSpawnInterval);
+        let powerupInterval = setInterval(() => createObject('powerup'), powerupSpawnInterval);
+        let seaweedInterval = setInterval(() => createObject('seaweed'), seaweedSpawnInterval);
 
-        // Initialize intervals when the game starts
-        function initializeIntervals() {
-            obstacleInterval = setInterval(() => createObject('obstacle'), obstacleSpawnInterval);
-            treasureInterval = setInterval(() => createObject('treasure'), treasureSpawnInterval);
-            powerupInterval = setInterval(() => createObject('powerup'), powerupSpawnInterval);
-            seaweedInterval = setInterval(() => createObject('seaweed'), seaweedSpawnInterval);
-        }
-
-        // Reset intervals when the game restarts
-        function resetIntervals() {
-            clearInterval(obstacleInterval);
-            clearInterval(treasureInterval);
-            clearInterval(powerupInterval);
-            clearInterval(seaweedInterval);
-            initializeIntervals();
-        }
-
-        // Initialize intervals for the first time
-        initializeIntervals();
+        // Start the game loop
+        gameLoop();
     </script>
 </body>
 </html>
