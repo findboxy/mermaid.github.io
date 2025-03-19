@@ -146,6 +146,10 @@
         <div id="invincibility-timer">Invincibility: 5</div>
         <div id="level">Level: 1</div>
         <div id="mermaid"></div>
+        <div id="debug-message" style="position: fixed; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.8); color: white; padding: 10px; border-radius: 5px; z-index: 1000;">
+  Debug messages will appear here.
+</div>
+        
     </div>
 
     <script>
@@ -154,6 +158,7 @@
         const scoreElement = document.getElementById('score');
         const invincibilityTimerElement = document.getElementById('invincibility-timer');
         const levelElement = document.getElementById('level');
+        const debugMessage = document.getElementById('debugMessage');
 
         let mermaidX = 100;
         let mermaidY = window.innerHeight / 2;
@@ -427,12 +432,13 @@ document.addEventListener('touchstart', (e) => {
 console.log('touch started');
   e.preventDefault();
   isDragging = true;
+debugMessage.textContent = 'touch started';
 
   // Get the initial touch position
   const touch = e.touches[0];
   startX = touch.clientX - offsetX;
   startY = touch.clientY - offsetY;
-
+});
 
 // Touch move event
 document.addEventListener('touchmove', (e) => {
