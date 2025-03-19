@@ -415,7 +415,6 @@
             mermaid.style.bottom = `${mermaidY}px`;
         });
         
-        const mermaid = document.getElementById('mermaid');
 
 let isDragging = false;
 let startX, startY, offsetX = 0, offsetY = 0;
@@ -430,9 +429,6 @@ mermaid.addEventListener('touchstart', (e) => {
   startX = touch.clientX - offsetX;
   startY = touch.clientY - offsetY;
 
-  // Add active class for styling (optional)
-  mermaid.classList.add('active');
-});
 
 // Touch move event
 mermaid.addEventListener('touchmove', (e) => {
@@ -452,15 +448,6 @@ mermaid.addEventListener('touchmove', (e) => {
 // Touch end event
 mermaid.addEventListener('touchend', () => {
   isDragging = false;
-
-  // Remove active class (optional)
-  mermaid.classList.remove('active');
-});
-
-// Touch cancel event (optional)
-mermaid.addEventListener('touchcancel', () => {
-  isDragging = false;
-  mermaid.classList.remove('active');
 });
 
         // Generate objects at random intervals
