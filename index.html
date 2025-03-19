@@ -414,6 +414,54 @@
             mermaid.style.left = `${mermaidX}px`;
             mermaid.style.bottom = `${mermaidY}px`;
         });
+        
+        const mermaid = document.getElementById('mermaid');
+
+let isDragging = false;
+let startX, startY, offsetX = 0, offsetY = 0;
+
+// Touch start event
+mermaid.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  isDragging = true;
+
+  // Get the initial touch position
+  const touch = e.touches[0];
+  startX = touch.clientX - offsetX;
+  startY = touch.clientY - offsetY;
+
+  // Add active class for styling (optional)
+  mermaid.classList.add('active');
+});
+
+// Touch move event
+mermaid.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+
+  const touch = e.touches[0];
+
+  // Calculate new position
+  offsetX = touch.clientX - startX;
+  offsetY = touch.clientY - startY;
+
+  // Update mermaid position
+  mermaid.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+});
+
+// Touch end event
+mermaid.addEventListener('touchend', () => {
+  isDragging = false;
+
+  // Remove active class (optional)
+  mermaid.classList.remove('active');
+});
+
+// Touch cancel event (optional)
+mermaid.addEventListener('touchcancel', () => {
+  isDragging = false;
+  mermaid.classList.remove('active');
+});
 
         // Generate objects at random intervals
         let obstacleInterval = setInterval(() => createObject('obstacle'), obstacleSpawnInterval);
