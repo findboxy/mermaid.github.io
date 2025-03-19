@@ -417,12 +417,14 @@
             mermaid.style.bottom = `${mermaidY}px`;
         });
         
+console.log(mermaid);
 
 let isDragging = false;
 let startX, startY, offsetX = 0, offsetY = 0;
 
 // Touch start event
 document.addEventListener('touchstart', (e) => {
+console.log('touch started');
   e.preventDefault();
   isDragging = true;
 
@@ -444,7 +446,8 @@ document.addEventListener('touchmove', (e) => {
   offsetY = touch.clientY - startY;
 
   // Update mermaid position
-  mermaid.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  mermaid.style.left = '${offsetX}px';
+  mermaid.style.top = '${offsetY}px)';
 });
 
 // Touch end event
