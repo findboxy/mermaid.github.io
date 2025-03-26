@@ -242,6 +242,7 @@
             resetGame(); // Reset game state
             gameLoopRunning = true;
             gameLoop(); // Start the game loop
+			startHillAnimations(); // Start hill height animations
         }
 
         // Function to reset the game state
@@ -280,7 +281,30 @@
             gameLoopRunning = false; // Stop the game loop
             finalScoreElement.textContent = `Score: ${score}`; // Show final score
             gameOverScreen.style.display = 'flex'; // Show game over screen
+			stopHillAnimations(); // Stop hill height animations
         }
+		
+		
+		// Function to change hill heights randomly
+        function startHillAnimations() {
+            // Change background hills height every 10 seconds
+            setInterval(() => {
+                const newHeight = Math.random() * 50 + 50; // Random height between 50% and 100%
+                backgroundHills.style.height = `${newHeight}%`;
+            }, 10000);
+
+            // Change foreground hills height every 5 seconds
+            setInterval(() => {
+                const newHeight = Math.random() * 50 + 50; // Random height between 50% and 100%
+                foregroundHills.style.height = `${newHeight}%`;
+            }, 5000);
+        }
+
+        // Function to stop hill animations
+        function stopHillAnimations() {
+            // No need to clear intervals since they are tied to the game loop
+        }
+
 
         // Function to increase difficulty every 30 seconds
         function increaseDifficulty() {
